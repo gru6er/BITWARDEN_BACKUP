@@ -1,0 +1,21 @@
+#!/bin/bash
+set -e
+BW_USERNAME=user@gmail.com
+export BW_PASSWORD="your_password"
+BITWARDEN_URL=BITWARDEN_url
+BW_PATH=/path/to/cofig/files/bitwarden
+DEST_PATH=/path/to/backups
+BW_NAME=bw_export_$(date +%y%m%d).json
+export BW_CLIENTSECRET="xxxxxxxxxxxxxxxxxxx"                                         # API KEY https://BITWARDEN_url/#/settings/security/security-keys
+export BW_CLIENTID="user.xxxxx-xxxxx-xxxxxxx-xxxxxxxx-xxxxxx"                        # API ID https://BITWARDEN_url/#/settings/security/security-keys
+bw config server $BITWARDEN_URL
+bw login --apikey
+export BW_SESSION=$(bw unlock --passwordenv BW_PASSWORD | grep -m 1 = | cut -c 21-)  # cut the password from the output and export it to a variable
+bw sync
+bw export --output $DEST_PATH/$BW_NAME --format json
+bw lock && bw logout
+echo $BW_PASSWORD | gpg -c --batch --yes --passphrase-fd 0 $DEST_PATH/$BW_NAME       # encrypt the backup 
+# chown www-data:www-data $DEST_PATH/$BW_NAME.gpg   
+rm  $DEST_PATH/$BW_NAME                                                              # delete source file
+find  $DEST_PATH -name "bw_export_*" -type f -mtime +2 -delete                       # delete old files
+echo complite $(date +%x%t%T) > $BW_PATH/bw.log

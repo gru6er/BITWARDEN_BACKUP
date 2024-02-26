@@ -1,0 +1,43 @@
+version: "3"
+networks:
+  ip31:
+    ipam:
+      config:
+        - subnet: 172.31.0.0/24
+services:
+  bitwarden:
+    image: vaultwarden/server:alpine
+    container_name: bitwarden
+    user: 1000:1000
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - SIGNUPS_ALLOWED=false
+      - INVITATIONS_ALLOWED=false
+      - ADMIN_TOKEN_FILE=/run/secrets/admin_token
+      - DOMAIN=https://bitwarden_url
+      - ROCKET_WORKERS=5
+      - SMTP_HOST=smtp.yandex.ru
+      - SMTP_FROM=user@yandex.ru
+      - SMTP_PORT=465
+      - SMTP_SECURITY=force_tls
+      - SMTP_USERNAME=user
+      - SMTP_PASSWORD_FILE=/run/secrets/smtp_password
+      #      WEBSOCKET_ENABLED:
+    secrets:
+       - admin_token
+       - smtp_password
+    volumes:
+      - ./bitwarden/data:/data
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      ip31:
+        ipv4_address: 172.31.0.2
+    ports:
+      - 8080:80
+    restart: unless-stopped
+secrets:
+   admin_token:
+     file: ./bitwarden/admin_token.txt
+   smtp_password:
+     file: ./bitwarden/smtp_password.txt
